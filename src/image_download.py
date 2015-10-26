@@ -123,8 +123,15 @@ def main(config):
 
 	print comment
 
-	post(config['save_directory'] + '/' + config['prefix'] + original_name,
-		 comment, config['instagram'])
+	if config['confirmation']:
+		x = raw_input('Upload: y/n? ')
+
+		if x == 'y':
+			post(config['save_directory'] + '/' + config['prefix'] + original_name,
+				 comment, config['instagram'])
+	else:
+		post(config['save_directory'] + '/' + config['prefix'] + original_name,
+				 comment, config['instagram'])
 
 	return
 
