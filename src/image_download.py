@@ -113,13 +113,13 @@ def main(config):
 	comment = ''
 	for keyword in keywords:
 		if keyword['score'] > 0.4:
-			comment += ' #' + keyword['text']
+			comment += ' #' + keyword['text'].replace(" ", "")
 
 	if not len(comment):
 		print('No comment so far adding first')
-		comment += ' #' + keyword['text'][0]
+		comment += ' #' + keyword['text'][0].replace(" ", "")
 	
-	comment += ' #glitchart'
+	comment += ' #glitchart #digitalart'
 
 	print comment
 
