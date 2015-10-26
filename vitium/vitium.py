@@ -6,9 +6,23 @@ import random
 import urllib
 import json
 import datetime
+import logging
 from jpglitch import Jpeg
 from alchemyapi_python.alchemyapi import AlchemyAPI
 from instagram import InstagramSession
+
+logger = logging.getLogger('vitium')
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('vitium.log')
+fh.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+logger.addHandler(fh)
+logger.addHandler(ch)
+
 
 def download(url):
 	response = urllib.urlopen(url)
@@ -41,16 +55,16 @@ def glitch(bytes, config):
 
 def printResponse(response):
 	if response['status'] == 'OK':
-	    print('## Response Object ##')
-	    print(json.dumps(response, indent=4))
+	    logger.info('## Response Object ##')
+	    logger.info(json.dumps(response, indent=4))
 
-	    print('')
-	    print('## Keywords ##')
+	    logger.info('')
+	    logger.info('## Keywords ##')
 	    for keyword in response['imageKeywords']:
-	        print(keyword['text'], ' : ', keyword['score'])
-	    print('')
+	        logger.info('{key} : {score}'.format(key=keyword['text'], score=keyword['score']))
+	    logger.info('')
 	else:
-	    print('Error in image tagging call: ', response['statusInfo'])
+	    logger.error('Error in image tagging call: ', response['statusInfo'])
 
 def getKeywords(response):
 	keywords = []
@@ -58,7 +72,7 @@ def getKeywords(response):
 	    for keyword in response['imageKeywords']:
 	        keywords.append(keyword)
 	else:
-	    print('Error in image tagging call: ', response['statusInfo'])
+	    logger.error('Error in image tagging call: ', response['statusInfo'])
 
 	return keywords
 
@@ -66,20 +80,22 @@ def post(file_path, comment, config):
 	insta = InstagramSession()
 	if insta.login(config['username'], config['password']):
 		media_id = insta.upload_photo(file_path)
-		print media_id
 		if media_id is not None:
+			logger.info("Uploaded image");
 			insta.configure_photo(media_id, comment)
 		else:
-			print 'Media id is None!'
+			logger.error('Media id is None!')
 
 def main(config):
 	while True:
 		now = datetime.datetime.now()
+		logger.info('Running at {now}'.format(now=now))
 		if len(config['download_urls']) > 0:
 			url = random.choice(config['download_urls'])
+			logger.info('Downloading from \'{URL}\''.format(URL=url))
 			bytes = download(url)
 		else:
-			print('ERROR: No \'download_urls\' in config');
+			logger.error('ERROR: No \'download_urls\' in config')
 			return
 
 		original_name = now.strftime(config['save_format_string'])
@@ -88,15 +104,18 @@ def main(config):
 		original_image = bytesToImage(bytes)
 		glitched_image = bytesToImage(glitched)
 
-		original_image.show()
-		glitched_image.show()
+		# original_image.show()
+		# glitched_image.show()
 
 		alchemyapi = AlchemyAPI(config['alchemyapi_key'])
 		
 		options = {'forceShowAll': 1}
+		logger.info('Requesting tags for original image')
 		orig_response = alchemyapi.imageTaggingRaw(bytes, options)
+		logger.info('Requesting tags for glitched image')
 		glitch_response = alchemyapi.imageTaggingRaw(glitched, options)
 		keywords = getKeywords(orig_response)
+		logger.info('Recieved original {orig} glitch {glitch}'.format(orig=len(keywords), glitch=len(getKeywords(glitch_response))))
 		if (len(keywords) and len(getKeywords(glitch_response))):
 			break;
 
@@ -105,9 +124,9 @@ def main(config):
 	original_image.save(config['save_directory'] + '/' + original_name)
 	glitched_image.save(config['save_directory'] + '/' + config['prefix'] + original_name)
 
-	print('---Original---')
+	logger.info('---Original---')
 	printResponse(orig_response)
-	print('---Glitched---')
+	logger.info('---Glitched---')
 	printResponse(glitch_response)
 
 	comment = ''
@@ -116,12 +135,12 @@ def main(config):
 			comment += ' #' + keyword['text'].replace(" ", "")
 
 	if not len(comment):
-		print('No comment so far adding first')
+		logger.info('No comment so far adding first')
 		comment += ' #' + keyword['text'][0].replace(" ", "")
 	
 	comment += ' #glitchart #digitalart'
 
-	print comment
+	logger.info('Comment is \'{comment}\''.format(comment=comment))
 
 	if config['confirmation']:
 		x = raw_input('Upload: y/n? ')

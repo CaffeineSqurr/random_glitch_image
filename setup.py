@@ -14,6 +14,9 @@ setup(
         'jpglitch',
         'Pillow',
     ],
+    dependency_links=[
+        'git+ssh://git@github.com:Kareeeeem/jpglitch.git'
+    ]
     long_description=read('README'),
     entry_points='''
         [console_scripts]
