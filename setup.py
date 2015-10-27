@@ -11,6 +11,7 @@ setup(
     py_modules=['vitium'],
     packages=['vitium'],
     install_requires=[
+	'requests',
         'jpglitch',
         'Pillow',
     ],
